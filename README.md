@@ -23,4 +23,4 @@ This should run the script file and launch them into your local web browser.
 __NOTE__: This repo is a work in progress, and will be improved by iteration.
 
 TODO: 
- -- include FRANCE_BOND_SERIES.xlsx for additional graphys and analysis
+ -- include FRANCE_BOND_SERIES.xlsx for additional graphs and analysis
