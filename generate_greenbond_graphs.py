@@ -6,7 +6,7 @@
 # First, import the package to handle the data Pandas stems from Panel Data
 # it has tools for time series manipulation
 
-from matplotlib.axis import XAxis, YAxis
+from os import chdir
 from sklearn import linear_model
 from sklearn.linear_model import LinearRegression
 from statsmodels.regression.rolling import RollingOLS
@@ -14,18 +14,21 @@ from statsmodels.tsa.stattools import grangercausalitytests
 from statsmodels.tsa.stattools import adfuller
 from scipy.stats import ttest_ind
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import plotly.graph_objs as go
 import plotly.express as px
-import pandas as pd
 import statsmodels.api as sm
-
-
-import numpy as np
 import scipy.stats as sp
-import matplotlib.pyplot as plt
-import os
 
 
+####################################################################
+# @plotly_fig_obj px.line object - generated from a dataframe      #
+# @new_name_dict  dict - { key : value } where the value will      #
+#                       represent the key in the plot legend       #
+# @return None - a side-effect method to update the plotly_fig_obj #
+####################################################################
 def sheets_to_labels(plotly_fig_obj, new_name_dict):
     plotly_fig_obj.for_each_trace(
         lambda t: t.update(name=new_name_dict[t.name],
@@ -38,7 +41,9 @@ def sheets_to_labels(plotly_fig_obj, new_name_dict):
 
 # Setting the directory and reading the data
 main_dir = "."
-os.chdir(main_dir)
+chdir(main_dir)
+
+# Should only read excel sheet once, unless different file.
 df = pd.read_excel('CHILEAN_BONDS_EXCEL.XLSX', sheet_name='Sheet1', skiprows=1)
 # I inserted a row before the data starts so that I know which bond belongs to which country
 # that is why I am skipping the first row with skiprow=1
@@ -46,236 +51,241 @@ df.set_index('Date', inplace=True)
 # here the first column HAS TO BE CALLED "Date" and it is case sensitive
 # inplace: Makes the changes in the dataframe if True.
 
-# 3) Viewing the data
-# commenting out since not needed as production assets
-# print(df.head())
-# print(type(df))
-# print(df)
-
 # plotting the data
-df.plot(title="Chilean Bonds")
+# assign the dataframe to a variable so that additional operations don't manipulate it
+df_cumulative = df
 
-fig1 = px.line(df, title='Cumulative Plot')
-fig1.update_xaxes(rangeslider_visible=True)
-fig1.show()
+# dataframe plots are kept for reference, but don't generate browser-viewable plots
+df_cumulative.plot(title="Chilean Bonds")
 
+fig_cum = px.line(df_cumulative,
+                  title='Cumulative Plot',
+                  labels={
+                      "value": "Yield",
+                      "variable": "Bonds"})
+fig_cum.update_layout(title={'text': 'Cumulative Plot',
+                             'y': 0.9,
+                             'x': 0.5,
+                             'xanchor': 'center',
+                             'yanchor': 'top'})
+fig_cum.show()
 
-##################################################################
-
-# plotting the green bond yield as a component of the dataframe
-# df['CH_GREEN50_YLD_YTM_MID'].plot()
-
-fig2 = px.line(df['CH_GREEN50_YLD_YTM_MID'], title='Chilean Green 2050')
-sheets_to_labels(fig2, {'CH_GREEN50_YLD_YTM_MID': 'Green 2050'})
-fig2.update_xaxes(rangeslider_visible=True)
-fig2.show()
-
-##################################################################
-
-# df2 = pd.read_excel('CHILEAN_BONDS_EXCEL.XLSX',
-#                     sheet_name='Sheet1', skiprows=1)
-df3 = df[['CH_GREEN50_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID', 'Bps_Chile']]
-df3.CH_VANILLA47_YLD_YTM_MID.plot(
-    grid=True, label="Vanilla", legend=True, color='orange')
-df3.CH_GREEN50_YLD_YTM_MID.plot(
-    grid=True, label="Green", legend=True, color='blue')
-df3.Bps_Chile.plot(secondary_y=True, label="BPS difference", title="Chile",
-                   legend=True, color="gray", ylabel='Yield', xlabel='Dates')
-
-# TODO: adjust plot line colors, get Bps_Chile to secondary_y
-fig3 = px.line(df3, title='Chile')
-sheets_to_labels(fig3, {
-    'CH_GREEN50_YLD_YTM_MID': 'Green 2050',
-    'CH_VANILLA47_YLD_YTM_MID': 'Vanilla 2047',
-    'Bps_Chile': 'Bps'
-})
-fig3.update_xaxes(rangeslider_visible=True)
-fig3.show()
-
-##################################################################
-
-# Ref df plots 4
-df4 = df[['FR_VANILLA41_YLD_YTM_MID', 'FR_GREEN39_YLD_YTM_MID', 'Bps_France']]
-df4.FR_VANILLA41_YLD_YTM_MID.plot(grid=True, label="Vanilla", color='orange')
-df4.FR_GREEN39_YLD_YTM_MID.plot(grid=True, label="Green", color='blue')
-plt.legend(loc='best')
-df4.Bps_France.plot(secondary_y=True, label="BPS difference", title="France",
-                    color="gray", ylabel='Yield', xlabel='Dates')
-plt.legend(loc='best')
-
-#####
-
-fig4 = px.line(df4, title='France')
-sheets_to_labels(fig4, {
-    'FR_VANILLA41_YLD_YTM_MID': 'Vanilla 2041',
-    'FR_GREEN39_YLD_YTM_MID': 'Green 2039',
-    'Bps_France': 'Bps'
-})
-fig4.update_xaxes(rangeslider_visible=True)
-fig4.show()
-
-##################################################################
-
-# Ref df plots 5
-df5 = df[['BR_VANILLA23_YLD_YTM_MID', 'BR_GREEN24_YLD_YTM_MID', 'Bps_Brazil']]
-df5['BR_VANILLA23_YLD_YTM_MID'].plot(
-    grid=True, label="Vanilla", color='orange', legend=True)
-df5['BR_GREEN24_YLD_YTM_MID'].plot(
-    grid=True, label="Green", legend=True, color='blue')
-plt.legend(loc='best')
-
-df5.Bps_Brazil.plot(secondary_y=True, label="BPS difference", title="Brazil BNDES", legend=True,
-                    color="gray", ylabel='Yield', xlabel='Dates')
-plt.legend(loc='best')
-
-#####
-
-fig5 = px.line(df5, title='Brazil BNDES')
-sheets_to_labels(fig5, {
-    'BR_VANILLA23_YLD_YTM_MID': 'Vanilla 2023',
-    'BR_GREEN24_YLD_YTM_MID': 'Green 2024',
-    'Bps_Brazil': 'Bps'
-})
-fig5.update_xaxes(rangeslider_visible=True)
-fig5.show()
-
-##################################################################
-
-df7 = df[['NG_VANILLA23_YLD_YTM_MID', 'NG_GREEN22_YLD_YTM_MID', 'Bps_Nigeria']]
-df7.NG_VANILLA23_YLD_YTM_MID.plot(grid=True, label="Vanilla", color='orange')
-df7.NG_GREEN22_YLD_YTM_MID.plot(grid=True, label="Green", color='blue')
-plt.legend(loc='best')
-df7.Bps_Nigeria.plot(secondary_y=True, label="BPS difference", title="Nigeria",
-                     color="gray", ylabel='Yield', xlabel='Dates')
-plt.legend(loc='lower right')
-
-# plotting two data time series as a part of the dataframe and assigning titles and labels
-fig6 = px.line(df7, title='Nigeria')
-sheets_to_labels(fig6, {
-    'NG_VANILLA23_YLD_YTM_MID': 'Vanilla 2023',
-    'NG_GREEN22_YLD_YTM_MID': 'Green 2022',
-    'Bps_Nigeria': 'Bps'
-})
-fig6.update_xaxes(rangeslider_visible=True)
-fig6.show()
-
-# dframe = df.set_index(pd.to_datetime(df.Date), drop=True)
-# df.CH_VANILLA47_YLD_YTM_MID.plot(grid=True, label="bitcoin", legend=True)
-# df.CH_GREEN50_YLD_YTM_MID.plot(secondary_y=True, label="tether", legend=True)
-
-print(df.head())
-
-##################################################################
-
-# Was importing px here, should move to another file?
-# nuevdf = pd.read_excel('CHILEAN_BONDS_EXCEL.XLSX',
-#                        sheet_name='Sheet1', skiprows=1)
-
-# fig7 = px.line(df)
-# fig7.update_xaxes(rangeslider_visible=True)
-# fig7.show()
-
-
-##################################################################
-
-# first I need to import plotly and assign an alias
-# then I also need pandas to read the file
-
-# duplicate
-# fig8 = px.line(df, title='Time Series with Rangeslider')
-# could be:
-df8 = df[['CH_GREEN50_YLD_YTM_MID']]
-fig8 = px.line(df8,
-               y='CH_GREEN50_YLD_YTM_MID',
-               range_x=['2019-07-01', '2022-12-31'],
-               title='Chile Green Bond Set Time Series with Rangeslider')
-
-# sheets_to_labels(fig8, {'CH_GREEN50_YLD_YTM_MID': 'Green 2050'})
-fig8.update_xaxes(rangeslider_visible=True)
-fig8.show()
 
 ##################################################################
 
 # Bps Series
 
-df9 = df[['Bps_Brazil', 'Bps_Chile', 'Bps_France', 'Bps_Nigeria']]
-fig9 = px.line(df9, title='Bps Series Comparison')
-sheets_to_labels(fig9, {
+df_bps = df[['Bps_Brazil', 'Bps_Chile', 'Bps_France', 'Bps_Nigeria']]
+fig_bps = px.line(df_bps, title='Bps Series Comparison')
+sheets_to_labels(fig_bps, {
     'Bps_Brazil': 'Brazil',
     'Bps_Chile': 'Chile',
     'Bps_France': 'France',
     'Bps_Nigeria': 'Nigeria'
 })
-fig9.show()
-
-##################################################################
-
-# this is another example from a differen source file from the web
-# import plotly.express as px
-# import pandas as pd
-# df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
-# fig = px.line(df, x='Date', y='AAPL.High', title='Time Series with Rangeslider')
-# fig.update_xaxes(rangeslider_visible=True)
-# fig.show()
-# print(df)
-
-# this is an example of multiple graphs from a differen source file from the web
-# it uses a package called plotly graphs
-# import plotly.graph_objs as go
-# import plotly.express as px
-# import pandas as pd
-# Data
-# gapminder = px.data.gapminder()
-# Most productive european countries (as of 2007)
-# df_eur = gapminder[gapminder['continent']=='Europe']
-# df_eur_2007 = df_eur[df_eur['year']==2007]
-# eur_gdp_top5=df_eur_2007.nlargest(5, 'gdpPercap')['country'].tolist()
-# df_eur_gdp_top5 = df_eur[df_eur['country'].isin(eur_gdp_top5)]
-
-# Most productive countries on the american continent (as of 2007)
-# df_ame = gapminder[gapminder['continent']=='Americas']
-# df_ame_2007 = df_ame[df_ame['year']==2007]
-# df_ame_top5=df_ame_2007.nlargest(5, 'gdpPercap')['country'].tolist()
-# df_ame_gdp_top5 = df_ame[df_ame['country'].isin(df_ame_top5)]
-
-# Plotly figure 1
-# fig = px.line(df_eur_gdp_top5, x='year', y='gdpPercap',
-# color="country",
-# line_group="country", hover_name="country")
-# fig.update_layout(title='Productivity, Europe' , showlegend=False)
-
-
-# Plotly figure 2
-# fig2 = go.Figure(fig.add_traces(
-# data=px.line(df_ame_gdp_top5, x='year', y='gdpPercap',
-# color="country",
-# line_group="country", line_dash='country', hover_name="country")._data))
-# fig2.update_layout(title='Productivity, Europe and America', showlegend=False)
-
-# fig.show()
-# fig2.show()
-# print(df_eur)
-# print(df_eur_gdp_top5)
+fig_bps.update_layout(title={'text': 'Bps Series Comparison',
+                             'y': 0.9,
+                             'x': 0.5,
+                             'xanchor': 'center',
+                             'yanchor': 'top'})
+# rangeslider does not work with BPS series comparisons (default visibility is set to False)
+fig_bps.update_xaxes(rangeslider_visible=False)
+fig_bps.show()
 
 ##################################################################
 
 # Chilean graphs
 
+# plotting the green bond yield as a component of the dataframe
+df_ch1 = df['CH_GREEN50_YLD_YTM_MID']
+# dataframe plots are kept for reference, but don't generate browser-viewable plots
+df_ch1.plot()
 
-df9 = df[['CH_GREEN50_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
-fig9 = px.line(df9, y=['CH_GREEN50_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID'], title='Chilean Bond Yields',
-               labels={"value": "Yield", "variable": "Bonds"}, range_y=[2.0, 5.0], range_x=["2019-06-19", "2019-12-15"])
+fig_ch1 = px.line(df_ch1,
+                  title='Chilean Green 2050',
+                  labels={
+                      "value": "Yield",
+                      "variable": "Bonds"})
+sheets_to_labels(fig_ch1, {'CH_GREEN50_YLD_YTM_MID': 'Green 2050'})
+# rangeslider does not work with BPS series comparisons
+fig_ch1.update_xaxes(rangeslider_visible=True)
+fig_ch1.update_layout(title={
+    'text': "Chile",
+    'y': 0.9,
+    'x': 0.5,
+    'xanchor': 'center',
+    'yanchor': 'top'
+})
+fig_ch1.show()
 
-sheets_to_labels(fig9, {
+##
+
+df_ch2_bps = df[['CH_GREEN50_YLD_YTM_MID',
+                 'CH_VANILLA47_YLD_YTM_MID',
+                 'Bps_Chile']]
+# dataframe plots are kept for reference, but don't generate browser-viewable plots
+df_ch2_bps.CH_VANILLA47_YLD_YTM_MID.plot(
+    grid=True, label="Vanilla", legend=True, color='orange')
+df_ch2_bps.CH_GREEN50_YLD_YTM_MID.plot(
+    grid=True, label="Green", legend=True, color='blue')
+df_ch2_bps.Bps_Chile.plot(secondary_y=True,
+                          label="BPS difference",
+                          title="Chile",
+                          legend=True,
+                          color="gray",
+                          ylabel='Yield',
+                          xlabel='Dates')
+
+# TODO: adjust plot line colors, get Bps_Chile to secondary_y
+fig_ch2_bps = px.line(df_ch2_bps,
+                      title='Chile',
+                      labels={
+                          "value": "Yield",
+                          "variable": "Bonds"})
+sheets_to_labels(fig_ch2_bps, {
+    'CH_GREEN50_YLD_YTM_MID': 'Green 2050',
+    'CH_VANILLA47_YLD_YTM_MID': 'Vanilla 2047',
+    'Bps_Chile': 'Bps'
+})
+fig_ch2_bps.update_layout(title={
+    'text': "Chile",
+    'y': 0.9,
+    'x': 0.5,
+    'xanchor': 'center',
+    'yanchor': 'top'
+})
+fig_ch2_bps.show()
+
+##
+
+# demonstrating the ability to set the initial rangeslider time series
+df_ch3 = df[['CH_GREEN50_YLD_YTM_MID']]
+fig_ch3 = px.line(df_ch3,
+                  y='CH_GREEN50_YLD_YTM_MID',
+                  range_x=['2019-06-15', '2020-11-13'],
+                  title='Chile Green Bond Set Time Series with Rangeslider',
+                  labels={
+                      "value": "Yield",
+                      "variable": "Bonds"})
+# sheets_to_labels(fig8, {'CH_GREEN50_YLD_YTM_MID': 'Green 2050'})
+fig_ch3.update_xaxes(rangeslider_visible=True)
+fig_ch3.update_layout(title={
+    'text': "Chile - Set Time Series with Rangeslider",
+    'y': 0.9,
+    'x': 0.5,
+    'xanchor': 'center',
+    'yanchor': 'top'
+})
+fig_ch3.show()
+
+##
+
+df_ch4 = df[['CH_GREEN50_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
+fig_ch4 = px.line(df_ch4,
+                  y=['CH_GREEN50_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID'],
+                  title='Chilean Bond Yields',
+                  labels={
+                      "value": "Yield",
+                      "variable": "Bonds"},
+                  range_y=[2.0, 5.0],
+                  range_x=["2019-06-19", "2019-12-15"])
+sheets_to_labels(fig_ch4, {
     'CH_GREEN50_YLD_YTM_MID': 'Green Bond 2050',
     'CH_VANILLA47_YLD_YTM_MID': 'Vanilla Bond 2047'
 })
+fig_ch4.update_layout(title={
+    'text': "Chile",
+    'y': 0.9,
+    'x': 0.5,
+    'xanchor': 'center',
+    'yanchor': 'top'
+})
+fig_ch4.update_xaxes(rangeslider_visible=True)
+fig_ch4.show()
 
-# fig.xlim([-10,0]) and plt.ylim([-10,0])
-fig9.update_layout(title={'text': "Chile", 'y': 0.9,
-                          'x': 0.5, 'xanchor': 'center', 'yanchor': 'top'})
-fig9.update_xaxes(rangeslider_visible=True)
-fig9.show()
+##
+
+df_ch5 = df[['CH_GREEN50_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
+fig_ch5 = px.line(df_ch5,
+                  y=['CH_GREEN50_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID'],
+                  title='Chilean Bond Yields',
+                  labels={
+                      "value": "Yield",
+                      "variable": "Bonds"
+                  })
+sheets_to_labels(fig_ch5, {
+    'CH_GREEN50_YLD_YTM_MID': 'Green Bond 2050',
+    'CH_VANILLA47_YLD_YTM_MID': 'Vanilla 2047'
+})
+fig_ch5.update_layout(title={'text': "Chile",
+                             'y': 0.9,
+                             'x': 0.5,
+                             'xanchor': 'center',
+                             'yanchor': 'top'})
+fig_ch5.update_xaxes(rangeslider_visible=True)
+fig_ch5.show()
+
+##################################################################
+
+# French graphs
+
+
+df_fr = df[['FR_GREEN39_YLD_YTM_MID', 'FR_VANILLA41_YLD_YTM_MID']]
+fig_fr = px.line(df_fr,
+                 y=['FR_GREEN39_YLD_YTM_MID', 'FR_VANILLA41_YLD_YTM_MID'],
+                 title='French Bond Yields',
+                 labels={
+                     "value": "Yield",
+                     "variable": "Bonds"},
+                 range_y=[-0.1, .7],
+                 range_x=["2019-06-19", "2019-12-15"])
+sheets_to_labels(fig_fr, {
+    'FR_GREEN39_YLD_YTM_MID': 'Green Bond 2039',
+    'FR_VANILLA41_YLD_YTM_MID': 'Vanilla Bond 2041'
+})
+fig_fr.update_layout(title={'text': "France",
+                            'y': 0.9,
+                            'x': 0.5,
+                            'xanchor': 'center',
+                            'yanchor': 'top'})
+fig_fr.update_xaxes(rangeslider_visible=True)
+fig_fr.show()
+
+##
+
+df_fr_bps = df[['FR_VANILLA41_YLD_YTM_MID',
+                'FR_GREEN39_YLD_YTM_MID',
+                'Bps_France']]
+df_fr_bps.FR_VANILLA41_YLD_YTM_MID.plot(
+    grid=True,
+    label="Vanilla",
+    color='orange')
+df_fr_bps.FR_GREEN39_YLD_YTM_MID.plot(grid=True, label="Green", color='blue')
+plt.legend(loc='best')
+df_fr_bps.Bps_France.plot(secondary_y=True,
+                          label="BPS difference",
+                          title="France",
+                          color="gray",
+                          xlabel='Dates',
+                          ylabel='Yield')
+plt.legend(loc='best')
+
+fig_fr_bps = px.line(df_fr_bps,
+                     title='France',
+                     labels={
+                         "value": "Yield",
+                         "variable": "Bonds"})
+sheets_to_labels(fig_fr_bps, {
+    'FR_VANILLA41_YLD_YTM_MID': 'Vanilla 2041',
+    'FR_GREEN39_YLD_YTM_MID': 'Green 2039',
+    'Bps_France': 'Bps'
+})
+fig_fr_bps.update_layout(title={'text': "France",
+                                'y': 0.9,
+                                'x': 0.5,
+                                'xanchor': 'center',
+                                'yanchor': 'top'})
+fig_fr_bps.show()
 
 
 ##################################################################
@@ -283,61 +293,124 @@ fig9.show()
 
 # NIGERIAN GRAPHS
 
-
-df2 = df[['NG_GREEN22_YLD_YTM_MID', 'NG_VANILLA23_YLD_YTM_MID']]
-# print(df2['NG_GREEN22_YLD_YTM_MID'].head())
-fig10 = px.line(df2, y=['NG_GREEN22_YLD_YTM_MID', 'NG_VANILLA23_YLD_YTM_MID'], title='Nigerian Bond Yields',
-                labels={"value": "Yield", "variable": "Bonds"}, range_y=[9.9, 15], range_x=["2019-06-19", "2019-12-15"])
-# fig.update_xaxes(rangeslider_visible=True)
-sheets_to_labels(fig10, {
+df_ng = df[['NG_GREEN22_YLD_YTM_MID', 'NG_VANILLA23_YLD_YTM_MID']]
+fig_ng = px.line(df_ng,
+                 y=['NG_GREEN22_YLD_YTM_MID', 'NG_VANILLA23_YLD_YTM_MID'],
+                 title='Nigerian Bond Yields',
+                 labels={
+                     "value": "Yield",
+                     "variable": "Bonds"},
+                 range_y=[2.5, 15],
+                 range_x=["2019-06-19", "2019-12-15"])
+sheets_to_labels(fig_ng, {
     'NG_GREEN22_YLD_YTM_MID': 'Green Bond 2022',
     'NG_VANILLA23_YLD_YTM_MID': 'Vanilla Bond 2023'
 })
+fig_ng.update_layout(title={'text': "Nigeria",
+                            'y': 0.9,
+                            'x': 0.5,
+                            'xanchor': 'center',
+                            'yanchor': 'top'})
+fig_ng.update_xaxes(rangeslider_visible=True)
+fig_ng.show()
 
-# fig.xlim([-10,0]) and plt.ylim([-10,0])
-fig10.update_layout(title={'text': "Nigeria", 'y': 0.9,
-                           'x': 0.5, 'xanchor': 'center', 'yanchor': 'top'})
-fig10.update_xaxes(rangeslider_visible=True)
-fig10.show()
+##
 
-##################################################################
+df_ng_bps = df[['NG_VANILLA23_YLD_YTM_MID',
+                'NG_GREEN22_YLD_YTM_MID', 'Bps_Nigeria']]
+df_ng_bps.NG_VANILLA23_YLD_YTM_MID.plot(
+    grid=True, label="Vanilla", color='orange')
+df_ng_bps.NG_GREEN22_YLD_YTM_MID.plot(grid=True, label="Green", color='blue')
+plt.legend(loc='best')
+df_ng_bps.Bps_Nigeria.plot(secondary_y=True, label="BPS difference", title="Nigeria",
+                           color="gray", ylabel='Yield', xlabel='Dates')
+plt.legend(loc='lower right')
 
-
-# French graphs
-
-
-df11 = df[['FR_GREEN39_YLD_YTM_MID', 'FR_VANILLA41_YLD_YTM_MID']]
-fig11 = px.line(df11, y=['FR_GREEN39_YLD_YTM_MID', 'FR_VANILLA41_YLD_YTM_MID'], title='French Bond Yields',
-                labels={"value": "Yield", "variable": "Bonds"}, range_y=[0, .7], range_x=["2019-06-19", "2019-12-15"])
-sheets_to_labels(fig11, {
-    'FR_GREEN39_YLD_YTM_MID': 'Green Bond 2039',
-    'FR_VANILLA41_YLD_YTM_MID': 'Vanilla Bond 2041'
+# plotting two data time series as a part of the dataframe and assigning titles and labels
+fig_ng_bps = px.line(df_ng_bps,
+                     title='Nigeria',
+                     labels={
+                         "value": "Yield",
+                         "variable": "Bonds"})
+sheets_to_labels(fig_ng_bps, {
+    'NG_VANILLA23_YLD_YTM_MID': 'Vanilla 2023',
+    'NG_GREEN22_YLD_YTM_MID': 'Green 2022',
+    'Bps_Nigeria': 'Bps'
 })
-# fig.xlim([-10,0]) and plt.ylim([-10,0])
-fig11.update_layout(title={'text': "France", 'y': 0.9,
-                           'x': 0.5, 'xanchor': 'center', 'yanchor': 'top'})
-fig11.update_xaxes(rangeslider_visible=True)
-fig11.show()
+fig_ng_bps.update_layout(title={'text': "Nigeria",
+                                'y': 0.9,
+                                'x': 0.5,
+                                'xanchor': 'center',
+                                'yanchor': 'top'})
+fig_ng_bps.show()
+
 
 ##################################################################
 
 
 # Brazilian graphs
 
+df_br_bps = df[['BR_VANILLA23_YLD_YTM_MID',
+                'BR_GREEN24_YLD_YTM_MID',
+               'Bps_Brazil']]
+df_br_bps['BR_VANILLA23_YLD_YTM_MID'].plot(grid=True,
+                                           label="Vanilla",
+                                           color='orange',
+                                           legend=True)
+df_br_bps['BR_GREEN24_YLD_YTM_MID'].plot(grid=True,
+                                         label="Green",
+                                         legend=True,
+                                         color='blue')
+plt.legend(loc='best')
 
-df12 = df[['BR_GREEN24_YLD_YTM_MID', 'BR_VANILLA23_YLD_YTM_MID']]
-fig12 = px.line(df12, y=['BR_GREEN24_YLD_YTM_MID', 'BR_VANILLA23_YLD_YTM_MID'],
-                labels={"value": "Yield", "variable": "Bonds"}, range_y=[2.8, 3.8], range_x=["2019-06-19", "2019-12-15"])
-sheets_to_labels(fig12, {
+df_br_bps.Bps_Brazil.plot(secondary_y=True,
+                          label="BPS difference",
+                          title="Brazil BNDES",
+                          legend=True,
+                          color="gray",
+                          ylabel='Yield',
+                          xlabel='Dates')
+plt.legend(loc='best')
+
+fig_br_bps = px.line(df_br_bps,
+                     title='Brazil BNDES',
+                     labels={
+                         "value": "Yield",
+                         "variable": "Bonds"})
+sheets_to_labels(fig_br_bps, {
+    'BR_VANILLA23_YLD_YTM_MID': 'Vanilla 2023',
+    'BR_GREEN24_YLD_YTM_MID': 'Green 2024',
+    'Bps_Brazil': 'Bps'
+})
+fig_br_bps.update_layout(title={'text': "Brazil",
+                                'y': 0.9,
+                                'x': 0.5,
+                                'xanchor': 'center',
+                                'yanchor': 'top'})
+fig_br_bps.show()
+
+##
+
+df_br2 = df[['BR_GREEN24_YLD_YTM_MID', 'BR_VANILLA23_YLD_YTM_MID']]
+fig_br2 = px.line(df_br2,
+                  y=['BR_GREEN24_YLD_YTM_MID', 'BR_VANILLA23_YLD_YTM_MID'],
+                  labels={
+                      "value": "Yield",
+                      "variable": "Bonds"},
+                  range_y=[1.6, 7.3],
+                  range_x=["2019-06-19", "2019-12-15"])
+sheets_to_labels(fig_br2, {
     'BR_GREEN24_YLD_YTM_MID': 'Green Bond 2024',
     'BR_VANILLA23_YLD_YTM_MID': 'Vanilla Bond 2023'
 })
 
-# fig.xlim([-10,0]) and plt.ylim([-10,0])
-fig12.update_layout(
-    title={'text': "Brazilian Bond Yields"})  # , 'xanchor': 'center', 'yanchor': 'top'})
-fig12.update_xaxes(rangeslider_visible=True)
-fig12.show()
+fig_br2.update_layout(title={'text': "Brazil",
+                             'y': 0.9,
+                             'x': 0.5,
+                             'xanchor': 'center',
+                             'yanchor': 'top'})
+fig_br2.update_xaxes(rangeslider_visible=True)
+fig_br2.show()
 
 ##################################################################
 
@@ -347,10 +420,10 @@ fig12.show()
 # in the original paper Analysis in E-views
 
 try:
-    df10 = pd.read_excel('FRANCE_BOND_SERIES.xlsx', sheet_name='Sheet1')
-    df10.set_index('Date', inplace=True)
-    data1 = df10['FR_Green2039']
-    data2 = df10['FR_VA_2041']
+    df_fr_excel = pd.read_excel('FRANCE_BOND_SERIES.xlsx', sheet_name='Sheet1')
+    df_fr_excel.set_index('Date', inplace=True)
+    data1 = df_fr_excel['FR_Green2039']
+    data2 = df_fr_excel['FR_VA_2041']
     print(data1.mean())
     print(data2.mean())
     stat, p = ttest_ind(data1, data2)
@@ -378,8 +451,10 @@ try:
     # Conducting a granger causality test
 
     # perform Granger-Causality test
-    grangercausalitytests(df10[['FR_Green2039', 'FR_VA_2041']], maxlag=[7])
-    grangercausalitytests(df10[['FR_VA_2041', 'FR_Green2039']], maxlag=[7])
+    grangercausalitytests(
+        df_fr_excel[['FR_Green2039', 'FR_VA_2041']], maxlag=[7])
+    grangercausalitytests(
+        df_fr_excel[['FR_VA_2041', 'FR_Green2039']], maxlag=[7])
     # Source https://www.statology.org/granger-causality-test-in-python/
 
     # add constant column to regress with intercept
@@ -425,20 +500,6 @@ except Exception:
 
 ##################################################################
 
-
-df13 = df[['CH_GREEN50_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
-fig13 = px.line(df13, y=['CH_GREEN50_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID'],
-                title='Chilean Bond Yields', labels={"value": "Yield", "variable": "Bonds"})
-sheets_to_labels(fig13, {
-    'CH_GREEN50_YLD_YTM_MID': 'Green Bond 2050',
-    'CH_VANILLA47_YLD_YTM_MID': 'Vanilla 2047'})
-fig13.update_layout(title={'text': "Chile", 'y': 0.9,
-                           'x': 0.5, 'xanchor': 'center', 'yanchor': 'top'})
-fig13.update_xaxes(rangeslider_visible=True)
-fig13.show()
-
-##################################################################
-
 # https://stackoverflow.com/questions/59762321/how-do-i-add-and-define-multiple-lines-in-a-plotly-time-series-chart
 # https://plotly.com/python/time-series/
 # https://towardsdatascience.com/basic-time-series-manipulation-with-pandas-4432afee64ea
@@ -448,8 +509,8 @@ fig13.show()
 
 # I am importing statsmodels to run a univariate regression with its commands
 try:
-    x = df2['FR_VANILLA41_YLD_YTM_MID'].tolist()
-    y = df2['FR_GREEN39_YLD_YTM_MID'].tolist()
+    x = df['FR_VANILLA41_YLD_YTM_MID'].tolist()
+    y = df['FR_GREEN39_YLD_YTM_MID'].tolist()
     # Now these are the variables
     # it is necessary to add the intercept
     x = sm.add_constant(x)
@@ -457,20 +518,20 @@ try:
     print(result1.summary())
 
     # now I am going to run a multivariate regression
-    x = df2[['FR_VANILLA41_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
+    x = df[['FR_VANILLA41_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
     print(type(x))
     # here the dataframe has the "features" or independent variables in '' and uses two square brakets
-    y = df2['FR_GREEN39_YLD_YTM_MID']
+    y = df['FR_GREEN39_YLD_YTM_MID']
     x = sm.add_constant(x)
     # this command adds the intercept
     result2 = sm.OLS(y, x).fit()
     print(result2.summary())
 
     # now I am going to run a multivariate regression
-    x = df2[['FR_VANILLA41_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
+    x = df[['FR_VANILLA41_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
     print(type(x))
     # here the dataframe has the "features" or independent variables in '' and uses two square brakets
-    y = df2['FR_GREEN39_YLD_YTM_MID']
+    y = df['FR_GREEN39_YLD_YTM_MID']
     x = sm.add_constant(x)
     print(type(y))
     # this command adds the intercept
@@ -478,10 +539,10 @@ try:
     print(result2.summary())
 
     # now I am going to run a multivariate regression
-    x = df2[['FR_VANILLA41_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
+    x = df[['FR_VANILLA41_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
     print(type(x))
     # here the dataframe has the "features" or independent variables in '' and uses two square brakets
-    y = df2['FR_GREEN39_YLD_YTM_MID']
+    y = df['FR_GREEN39_YLD_YTM_MID']
     x = sm.add_constant(x)
     # this command adds the intercept
     result2 = sm.OLS(y, x).fit()
@@ -518,7 +579,7 @@ try:
     # next, I declare the variables
     x = 'CH_GREEN50_YLD_YTM_MID'
     y = 'CH_VANILLA47_YLD_YTM_MID'
-    data, target = df2[[x]], df2[y]
+    data, target = df[[x]], df[y]
     lr = LinearRegression()
     lr.fit(data, target)
 
@@ -545,8 +606,8 @@ try:
     print(regr.coef_)
 
     print(type(x))
-    print(df2.describe())
-    print(df2.info())
+    print(df.describe())
+    print(df.info())
 
     print(type(x2))
     print(type(trend))
