@@ -68,7 +68,7 @@ fig_cum.update_layout(title={'text': 'Cumulative Plot',
                              'x': 0.5,
                              'xanchor': 'center',
                              'yanchor': 'top'})
-fig_cum.show()
+fig_cum.write_html('./assets/cumulative_plot.html')
 
 
 ##################################################################
@@ -90,7 +90,7 @@ fig_bps.update_layout(title={'text': 'Bps Series Comparison',
                              'yanchor': 'top'})
 # rangeslider does not work with BPS series comparisons (default visibility is set to False)
 fig_bps.update_xaxes(rangeslider_visible=False)
-fig_bps.show()
+fig_bps.write_html('./assets/bps_comparisons.html')
 
 ##################################################################
 
@@ -116,7 +116,7 @@ fig_ch1.update_layout(title={
     'xanchor': 'center',
     'yanchor': 'top'
 })
-fig_ch1.show()
+fig_ch1.write_html('./assets/chile1.html')
 
 ##
 
@@ -154,7 +154,7 @@ fig_ch2_bps.update_layout(title={
     'xanchor': 'center',
     'yanchor': 'top'
 })
-fig_ch2_bps.show()
+fig_ch2_bps.write_html('./assets/chile2_bps.html')
 
 ##
 
@@ -176,7 +176,7 @@ fig_ch3.update_layout(title={
     'xanchor': 'center',
     'yanchor': 'top'
 })
-fig_ch3.show()
+fig_ch3.write_html('./assets/chile3.html')
 
 ##
 
@@ -201,7 +201,7 @@ fig_ch4.update_layout(title={
     'yanchor': 'top'
 })
 fig_ch4.update_xaxes(rangeslider_visible=True)
-fig_ch4.show()
+fig_ch4.write_html('./assets/chile4.html')
 
 ##
 
@@ -223,7 +223,7 @@ fig_ch5.update_layout(title={'text': "Chile",
                              'xanchor': 'center',
                              'yanchor': 'top'})
 fig_ch5.update_xaxes(rangeslider_visible=True)
-fig_ch5.show()
+fig_ch5.write_html('./assets/chile5.html')
 
 ##################################################################
 
@@ -249,7 +249,7 @@ fig_fr.update_layout(title={'text': "France",
                             'xanchor': 'center',
                             'yanchor': 'top'})
 fig_fr.update_xaxes(rangeslider_visible=True)
-fig_fr.show()
+fig_fr.write_html('./assets/france1.html')
 
 ##
 
@@ -285,7 +285,7 @@ fig_fr_bps.update_layout(title={'text': "France",
                                 'x': 0.5,
                                 'xanchor': 'center',
                                 'yanchor': 'top'})
-fig_fr_bps.show()
+fig_fr_bps.write_html('./assets/france2_bps.html')
 
 
 ##################################################################
@@ -312,7 +312,7 @@ fig_ng.update_layout(title={'text': "Nigeria",
                             'xanchor': 'center',
                             'yanchor': 'top'})
 fig_ng.update_xaxes(rangeslider_visible=True)
-fig_ng.show()
+fig_ng.write_html('./assets/niger1.html')
 
 ##
 
@@ -342,7 +342,7 @@ fig_ng_bps.update_layout(title={'text': "Nigeria",
                                 'x': 0.5,
                                 'xanchor': 'center',
                                 'yanchor': 'top'})
-fig_ng_bps.show()
+fig_ng_bps.write_html('./assets/niger2_bps.html')
 
 
 ##################################################################
@@ -387,7 +387,7 @@ fig_br_bps.update_layout(title={'text': "Brazil",
                                 'x': 0.5,
                                 'xanchor': 'center',
                                 'yanchor': 'top'})
-fig_br_bps.show()
+fig_br_bps.write_html('./assets/brazil1_bps.html')
 
 ##
 
@@ -410,7 +410,7 @@ fig_br2.update_layout(title={'text': "Brazil",
                              'xanchor': 'center',
                              'yanchor': 'top'})
 fig_br2.update_xaxes(rangeslider_visible=True)
-fig_br2.show()
+fig_br2.write_html('./assets/brazil2.html')
 
 ##################################################################
 
@@ -424,8 +424,8 @@ try:
     df_fr_excel.set_index('Date', inplace=True)
     data1 = df_fr_excel['FR_Green2039']
     data2 = df_fr_excel['FR_VA_2041']
-    print(data1.mean())
-    print(data2.mean())
+    # print(data1.mean())
+    # print(data2.mean())
     stat, p = ttest_ind(data1, data2)
     print('stat=%.3f, p=%.3f' % (stat, p))
     if p > 0.05:
@@ -466,7 +466,7 @@ try:
         'const', 'FR_VA_2041', 't']], window=30)
     rres = model.fit()
     # rres.params.tail(20) #look at last few intercept and coef
-    print(rres)
+    # print(rres)
 
     params = rres.params.copy()
     params.index = np.arange(1, params.shape[0] + 1)
@@ -488,11 +488,11 @@ try:
     # it is necessary to add the intercept
     x = sm.add_constant(x)
     result1 = sm.OLS(y, x).fit()
-    print(result1.summary())
+    # print(result1.summary())
 
     # rolling coefs
     # lr = LinearRegression().fit(x, y)
-    print(f'intercept = {lr.intercept_:.5f}, slope = {lr.coef_[0]:.3f}')
+    # print(f'intercept = {lr.intercept_:.5f}, slope = {lr.coef_[0]:.3f}')
 
 except Exception:
     print('Cannot read FRANCE_BOND_SERIES.xlsx')
@@ -515,7 +515,17 @@ try:
     # it is necessary to add the intercept
     x = sm.add_constant(x)
     result1 = sm.OLS(y, x).fit()
-    print(result1.summary())
+    # print(result1.summary())
+
+    # now I am going to run a multivariate regression
+    x = df[['FR_VANILLA41_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
+    # print(type(x))
+    # here the dataframe has the "features" or independent variables in '' and uses two square brakets
+    y = df['FR_GREEN39_YLD_YTM_MID']
+    x = sm.add_constant(x)
+    # this command adds the intercept
+    result2 = sm.OLS(y, x).fit()
+    # print(result2.summary())
 
     # now I am going to run a multivariate regression
     x = df[['FR_VANILLA41_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
@@ -523,35 +533,25 @@ try:
     # here the dataframe has the "features" or independent variables in '' and uses two square brakets
     y = df['FR_GREEN39_YLD_YTM_MID']
     x = sm.add_constant(x)
+    # print(type(y))
     # this command adds the intercept
     result2 = sm.OLS(y, x).fit()
-    print(result2.summary())
+    # print(result2.summary())
 
     # now I am going to run a multivariate regression
     x = df[['FR_VANILLA41_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
-    print(type(x))
-    # here the dataframe has the "features" or independent variables in '' and uses two square brakets
-    y = df['FR_GREEN39_YLD_YTM_MID']
-    x = sm.add_constant(x)
-    print(type(y))
-    # this command adds the intercept
-    result2 = sm.OLS(y, x).fit()
-    print(result2.summary())
-
-    # now I am going to run a multivariate regression
-    x = df[['FR_VANILLA41_YLD_YTM_MID', 'CH_VANILLA47_YLD_YTM_MID']]
-    print(type(x))
+    # print(type(x))
     # here the dataframe has the "features" or independent variables in '' and uses two square brakets
     y = df['FR_GREEN39_YLD_YTM_MID']
     x = sm.add_constant(x)
     # this command adds the intercept
     result2 = sm.OLS(y, x).fit()
-    print(result2.summary())
+    # print(result2.summary())
 
     # now I am going to add a deterministic trend variable
     # t=[i+1 for i in range(0,368)]
     trend = list(range(1, 368))
-    print(type(trend))
+    # print(type(trend))
 
     # x2.append((trend), ignore_index=False)
     # print(type(x2))
@@ -586,10 +586,10 @@ try:
     # now I am going to generate the variable trend which is a deterministic trend
     # t=[x+1 for x in range(0,368)]
     trend = list(range(1, 368))
-    print(type(x))
+    # print(type(x))
     x2 = np.append(x, trend)
-    print(type(x2))
-    print(x2)
+    # print(type(x2))
+    # print(x2)
     # print(x)
     # result = sm.OLS(y, x).fit()
     # print(result.summary())
@@ -603,14 +603,14 @@ try:
     # data, target=df2[[x]],df2[y]
     regr = linear_model.LinearRegression()
     regr.fit(X, Y)
-    print(regr.coef_)
+    # print(regr.coef_)
 
-    print(type(x))
-    print(df.describe())
-    print(df.info())
+    # print(type(x))
+    # print(df.describe())
+    # print(df.info())
 
-    print(type(x2))
-    print(type(trend))
+    # print(type(x2))
+    # print(type(trend))
     dftrend = pd.DataFrame(trend)
     # dfcmplto = x2.append(pd.DataFrame(trend))
 
@@ -618,3 +618,5 @@ try:
     # print(trend)
 except(Exception):
     print('Linear Regression analysis not available until France Bond data included')
+
+print('\nFiles created in "./assets/"')
